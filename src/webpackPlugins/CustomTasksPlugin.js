@@ -16,8 +16,13 @@ class CustomTasksPlugin {
      * @param {import("webpack").Compiler} compiler
      */
     apply(compiler) {
+        let firstTime = true;
+
         compiler.hooks.done.tapPromise(this.constructor.name, async stats => {
-            await this.runTasks(stats);
+            if (firstTime) {
+                await this.runTasks(stats);
+                firstTime = false;
+            }
 
             if (this.mix.components.get('version') && !this.mix.isUsing('hmr')) {
                 this.applyVersioning();
@@ -66,12 +71,12 @@ class CustomTasksPlugin {
      * @param stats
      */
     async runTasks(stats) {
-        let assets = []
+        let assets = [];
 
         for (const task of this.mix.tasks) {
             await Promise.resolve(task.run());
 
-            assets.push(...task.assets)
+            assets.push(...task.assets);
         }
 
         await Promise.allSettled(assets.map(asset => this.addAsset(asset, stats)));
@@ -107,7 +112,7 @@ class CustomTasksPlugin {
      */
     applyVersioning() {
         for (const [key, value] of Object.entries(this.mix.manifest.get())) {
-            this.mix.manifest.hash(key)
+            this.mix.manifest.hash(key);
         }
     }
 }
